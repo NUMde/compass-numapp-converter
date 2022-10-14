@@ -10,15 +10,15 @@
 <section>
   <nav>
     <ul>
-      <li>Softwareversion: 1.0</li>
+      <li>Softwareversion: 1.1</li>
       <li>Es werden ausschlie&szliglich Dateien von <a href="https://numde.github.io/compass-numapp">COMPASS Questionnaire Response Downloader</a> unterstützt</li>
     </ul>
   </nav>
   
   <article>
     <h1> compass-numapp-converter</h1>
-    <p>Konvertiert Frageb&oumlgen im JSON Format in eine CSV Datei. Für jede Frage eines egePan_questionnaires wird eine extra Spalte mit der Definition der Frage erzeugt. Für jeden Fragebogentyp wird eine Datei heruntergeladen.</p>
-    <p>Hier decrypted_questionnnaire_responses.txt Datei hochladen.</p>
+    <p>Konvertiert Frageb&oumlgen im JSON Format in eine CSV Datei. Für jede Frage wird die Variable <i>definition</i> der Kopfzeile hinzugefügt. Für jeden Fragebogentyp wird eine eigene Datei erzeugt.</p>
+    <p>Klicken Sie hier, um eine decrypted_questionnnaire_responses.txt Datei auszuwählen, die vom Compass-numapp-downloader erstellt worden ist. </p>
 	<input type="file" id="fileInput"></input>
 	<p><div id="app"></div></p>
   </article>
@@ -98,38 +98,56 @@ document.getElementById('fileInput').addEventListener('change', function selecte
  
 const app = document.getElementById('app');
 const reader = new FileReader();
+var error = false;
 
 reader.onload = function fileReadCompleted() {
-	var csv_data = readCSV(reader);
-	
-	var resultall = {};
-	for(row of csv_data){
-		var record = {};
-		// UUID;SubjectId;QuestionnaireId;Version;JSON;AbsendeDatum;ErhaltenDatum
-		record['UUID'] = row[0];
-		record['SubjectId'] = row[1];
-		record['QuestionnaireId']= row[2];
-		record['Version']= row[3];
-		record['AbsendeDatum']= row[5];
-		record['ErhaltenDatum'] = row[6];
-		var questionnaire_response = JSON.parse(row[4]);
-		record = {...record, ...(extractAnswers(questionnaire_response["data"]["body"]["item"]))};
-	    var questionnaire_id = questionnaire_response["data"]["body"]["questionnaire"];
- 	    if(!(questionnaire_id in resultall)){
-	    	 resultall[questionnaire_id] = new Array();
-	    }
-	    resultall[questionnaire_id].push(record);
-	}
-
-	for (var questionnaire in resultall){
-		var csv_text = "";
-		csv_text += Object.keys(resultall[questionnaire][0]).join(';')
-		for(var record of resultall[questionnaire]){
-			csv_text += "\r\n" + Object.values(record).join(';');
+	try{
+		var csv_data = readCSV(reader);
+		if(!csv_data.length){
+			error = true;
 		}
-		download(questionnaire + ".csv", csv_text);
+		var resultall = {};
+		for(row of csv_data){
+			if(row.length != 7){
+				console.log(row.length);
+			}
+			var record = {};
+			// UUID;SubjectId;QuestionnaireId;Version;JSON;AbsendeDatum;ErhaltenDatum
+			record['UUID'] = row[0];
+			record['SubjectId'] = row[1];
+			record['QuestionnaireId']= row[2];
+			record['Version']= row[3];
+			record['AbsendeDatum']= row[5];
+			record['ErhaltenDatum'] = row[6];
+			
+			var questionnaire_response = JSON.parse(row[4]);
+			
+			record = {...record, ...(extractAnswers(questionnaire_response["data"]["body"]["item"]))};
+		    var questionnaire_id = questionnaire_response["data"]["body"]["questionnaire"];
+	 	    if(!(questionnaire_id in resultall)){
+		    	 resultall[questionnaire_id] = new Array();
+		    }
+		    resultall[questionnaire_id].push(record);
+		}
+
+		for (var questionnaire in resultall){
+			var csv_text = "";
+			csv_text += Object.keys(resultall[questionnaire][0]).join(';')
+			for(var record of resultall[questionnaire]){
+				csv_text += "\r\n" + Object.values(record).join(';');
+			}
+			download(questionnaire + ".csv", csv_text);
+		}
+	} catch (e){
+		console.error(e)
+		error = true;
 	}
-	app.innerText = "\u2705Konvertierung abgeschlossen.";
+	if(error){
+		app.innerText = "\u274C Fehlerhafte Datei.";
+	} else {
+		app.innerText = "\u2705 Konvertierung abgeschlossen.";
+	}
+	
   };
   reader.readAsText(this.files[0]);
 });
@@ -150,13 +168,18 @@ function extractAnswers(root){
          			key = node["linkId"];
         		} else {
         			console.error("Invalid fallback Key. Field 'linkId' not found.");
+        			error = true;
         		}
     		} else {
     			key = node["definition"];
     		}
-    		if(node["answer"] || node["answer"].length > 0 ){
-    			value = getValueFromAnswer(node["answer"][0]);
-    		}
+     		if(node.hasOwnProperty("answer")){
+	    		if(node["answer"].length > 0 ){
+	    			value = getValueFromAnswer(node["answer"][0]);
+	    		} 
+     		} else {
+     			error = true;
+     		}
     		result[key] = value;
     	}
     }
@@ -181,6 +204,7 @@ function getValueFromAnswer(val){
         return val["valueDate"];
     }
     console.error("Unknown type of value: " + val);
+    error = true;
     return "";
 }
 
