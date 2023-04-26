@@ -1,240 +1,251 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
+
 <body>
-<header>
-  <h2>Numcompass Converter</h2>
-  <title>Numcompass Converter</title>
-</header>
+  <header>
+    <h2>Numcompass Converter</h2>
+    <title>Numcompass Converter</title>
+  </header>
 
 
-<section>
-  <nav>
-    <ul>
-      <li>Softwareversion: 1.1</li>
-      <li>Es werden ausschließlich Dateien von <a href="https://numde.github.io/compass-numapp">COMPASS Questionnaire Response Downloader</a> unterstützt</li>
-    </ul>
-  </nav>
-  
-  <article>
-    <h1> compass-numapp-converter</h1>
-    <p>Konvertiert Frageb&oumlgen im JSON Format in eine CSV Datei. Für jede Frage wird die Variable <i>definition</i> der Kopfzeile hinzugefügt. Für jeden Fragebogentyp wird eine eigene Datei erzeugt.</p>
-    <p>Klicken Sie hier, um eine decrypted_questionnnaire_responses.txt Datei auszuwählen, die vom Compass-numapp-downloader erstellt worden ist. </p>
-	<input type="file" id="fileInput"></input>
-	<p><div id="app"></div></p>
-  </article>
-</section>
+  <section>
+    <nav>
+      <ul>
+        <li>Softwareversion: 1.2</li>
+        <li>Es werden ausschließlich Dateien von <a href="https://numde.github.io/compass-numapp">COMPASS Questionnaire
+            Response Downloader</a> unterstützt</li>
+      </ul>
+    </nav>
+
+    <article>
+      <h1> compass-numapp-converter</h1>
+      <p>Konvertiert Frageb&oumlgen im JSON Format in eine CSV Datei. Für jede Frage wird die Variable <i>definition</i>
+        der Kopfzeile hinzugefügt. Für jeden Fragebogentyp wird eine eigene Datei erzeugt.</p>
+      <p>Klicken Sie hier, um eine decrypted_questionnnaire_responses.txt Datei auszuwählen, die vom
+        Compass-numapp-downloader erstellt worden ist. </p>
+      <input type="file" id="fileInput"></input>
+      <p>
+      <div id="app"></div>
+      </p>
+    </article>
+  </section>
 
 
-<footer>
-  <p>Imbei - Universit&aumltsmedizin Mainz</p>
-</footer>
+  <footer>
+    <p>Imbei - Universit&aumltsmedizin Mainz</p>
+  </footer>
 </body>
 
 <style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-header {
-  background-color: #666;
-  padding: 30px;
-  text-align: center;
-  font-size: 35px;
-  color: white;
-}
-
-nav {
-  float: left;
-  width: 30%;
-  background: #ccc;
-  padding: 20px;
-}
-
-nav ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-article {
-  float: left;
-  padding: 20px;
-  width: 70%;
-  background-color: #f1f1f1;
-}
-
-section::after {
-  content: "";
-  display: table;
-  clear: both;
-}
-
-footer {
-  background-color: #777;
-  padding: 10px;
-  text-align: center;
-  color: white;
-}
-
-@media (max-width: 600px) {
-  nav, article {
-    width: 100%;
-    height: auto;
+  * {
+    box-sizing: border-box;
   }
-}
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  header {
+    background-color: #666;
+    padding: 30px;
+    text-align: center;
+    font-size: 35px;
+    color: white;
+  }
+
+  nav {
+    float: left;
+    width: 30%;
+    background: #ccc;
+    padding: 20px;
+  }
+
+  nav ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  article {
+    float: left;
+    padding: 20px;
+    width: 70%;
+    background-color: #f1f1f1;
+  }
+
+  section::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  footer {
+    background-color: #777;
+    padding: 10px;
+    text-align: center;
+    color: white;
+  }
+
+  @media (max-width: 600px) {
+
+    nav,
+    article {
+      width: 100%;
+      height: auto;
+    }
+  }
 </style>
 
-</html> 
+</html>
 
 <script>
-document.getElementById('fileInput').addEventListener('change', function selectedFileChanged() {
-  if (this.files.length === 0) {
-    console.error('No file selected.');
-    return;
-  }
- 
-const app = document.getElementById('app');
-const reader = new FileReader();
-var error = false;
+  document.getElementById('fileInput').addEventListener('change', function selectedFileChanged() {
+    if (this.files.length === 0) {
+      console.error('No file selected.');
+      return;
+    }
 
-reader.onload = function fileReadCompleted() {
-	try{
-		var csv_data = readCSV(reader);
-		if(!csv_data.length){
-			error = true;
-		}
-		var resultall = {};
-		for(row of csv_data){
-			if(row.length != 7){
-				console.log(row.length);
-			}
-			var record = {};
-			// UUID;SubjectId;QuestionnaireId;Version;JSON;AbsendeDatum;ErhaltenDatum
-			record['UUID'] = row[0];
-			record['SubjectId'] = row[1];
-			record['QuestionnaireId']= row[2];
-			record['Version']= row[3];
-			record['AbsendeDatum']= row[5];
-			record['ErhaltenDatum'] = row[6];
-			
-			var questionnaire_response = JSON.parse(row[4]);
-			
-			record = {...record, ...(extractAnswers(questionnaire_response["data"]["body"]["item"]))};
-		    var questionnaire_id = questionnaire_response["data"]["body"]["questionnaire"];
-	 	    if(!(questionnaire_id in resultall)){
-		    	 resultall[questionnaire_id] = new Array();
-		    }
-		    resultall[questionnaire_id].push(record);
-		}
+    const app = document.getElementById('app');
+    const reader = new FileReader();
+    var error = false;
 
-		for (var questionnaire in resultall){
-			var csv_text = "";
-			csv_text += Object.keys(resultall[questionnaire][0]).join(';')
-			for(var record of resultall[questionnaire]){
-				csv_text += "\r\n" + Object.values(record).join(';');
-			}
-			download(questionnaire + ".csv", csv_text);
-		}
-	} catch (e){
-		console.error(e)
-		error = true;
-	}
-	if(error){
-		app.innerText = "\u274C Fehlerhafte Datei.";
-	} else {
-		app.innerText = "\u2705 Konvertierung abgeschlossen.";
-	}
-	
-  };
-  reader.readAsText(this.files[0]);
-});
+    reader.onload = function fileReadCompleted() {
+      try {
+        var csv_data = readCSV(reader);
+        if (!csv_data.length) {
+          error = true;
+        }
+        var resultall = {};
+        for (row of csv_data) {
+          if (row.length != 7) {
+            console.log(row.length);
+          }
+          var record = {};
+          // UUID;SubjectId;QuestionnaireId;Version;JSON;AbsendeDatum;ErhaltenDatum
+          record['UUID'] = row[0];
+          record['SubjectId'] = row[1];
+          record['QuestionnaireId'] = row[2];
+          record['Version'] = row[3];
+          record['AbsendeDatum'] = row[5];
+          record['ErhaltenDatum'] = row[6];
+
+          var questionnaire_response = JSON.parse(row[4]);
+
+          record = { ...record, ...(extractAnswers(questionnaire_response["data"]["body"]["item"])) };
+          var questionnaire_id = questionnaire_response["data"]["body"]["questionnaire"];
+          if (!(questionnaire_id in resultall)) {
+            resultall[questionnaire_id] = new Array();
+          }
+          resultall[questionnaire_id].push(record);
+        }
+
+        for (var questionnaire in resultall) {
+          var csv_text = "";
+          csv_text += Object.keys(resultall[questionnaire][0]).join(';')
+          for (var record of resultall[questionnaire]) {
+            csv_text += "\r\n" + Object.values(record).join(';');
+          }
+          download(questionnaire + ".csv", csv_text);
+        }
+      } catch (e) {
+        console.error(e)
+        error = true;
+      }
+      if (error) {
+        app.innerText = "\u274C Fehlerhafte Datei.";
+      } else {
+        app.innerText = "\u2705 Konvertierung abgeschlossen.";
+      }
+
+    };
+    reader.readAsText(this.files[0]);
+  });
 
 
-function extractAnswers(root){
+  function extractAnswers(root) {
     result = {};
-    for(node of root){
-    	if(node.hasOwnProperty("item")){
-    		result = {...result, ...extractAnswers(node["item"])};
-    	} else {
-    		var key = "";
-    		var value = ""; 
-     		if(!(node.hasOwnProperty("definition"))){
-    			console.warn("Invalid Key. Field 'definition' not found. Go to fallback.");
-    			// fallback
-         		if((node.hasOwnProperty("linkId"))){
-         			key = node["linkId"];
-        		} else {
-        			console.error("Invalid fallback Key. Field 'linkId' not found.");
-        			error = true;
-        		}
-    		} else {
-    			key = node["definition"];
-    		}
-     		if(node.hasOwnProperty("answer")){
-	    		if(node["answer"].length > 0 ){
-	    			value = getValueFromAnswer(node["answer"][0]);
-	    		} 
-     		} else {
-     			error = true;
-     		}
-    		result[key] = value;
-    	}
+    for (node of root) {
+      if (node.hasOwnProperty("item")) {
+        result = { ...result, ...extractAnswers(node["item"]) };
+      } else {
+        var key = "";
+        var value = "";
+        if (!(node.hasOwnProperty("definition"))) {
+          console.warn("Invalid Key. Field 'definition' not found. Go to fallback.");
+          // fallback
+          if ((node.hasOwnProperty("linkId"))) {
+            key = node["linkId"];
+          } else {
+            console.error("Invalid fallback Key. Field 'linkId' not found.");
+            error = true;
+          }
+        } else {
+          key = node["definition"];
+        }
+        if (node.hasOwnProperty("answer")) {
+          if (node["answer"].length > 0) {
+            value = getValueFromAnswer(node["answer"][0]);
+          }
+        } else {
+          error = true;
+        }
+        result[key] = value;
+      }
     }
     return result;
-}
+  }
 
-	// Extrahiert den Wert aus item -> answer
-function getValueFromAnswer(val){
-    if (val.hasOwnProperty("valueString")){
-        return val["valueString"];
+  // Extrahiert den Wert aus item -> answer
+  function getValueFromAnswer(val) {
+    if (val.hasOwnProperty("valueString")) {
+      return val["valueString"];
     }
-    else if (val.hasOwnProperty("valueInteger")){
-        return val["valueInteger"];
+    else if (val.hasOwnProperty("valueInteger")) {
+      return val["valueInteger"];
     }
-    else if (val.hasOwnProperty("valueCoding")){
-        return val["valueCoding"]["code"];
+    else if (val.hasOwnProperty("valueCoding")) {
+      return val["valueCoding"]["code"];
     }
-    else if (val.hasOwnProperty("valueBoolean")){
-        return val["valueBoolean"];
+    else if (val.hasOwnProperty("valueBoolean")) {
+      return val["valueBoolean"];
     }
-    else if (val.hasOwnProperty("valueDate")){
-        return val["valueDate"];
+    else if (val.hasOwnProperty("valueDate")) {
+      return val["valueDate"];
+    }
+    else if (val.hasOwnProperty("valueDecimal")) {
+      return val["valueDecimal"];
     }
     console.error("Unknown type of value: " + val);
     error = true;
     return "";
-}
+  }
 
-function readCSV(reader){
-	var csv = reader.result;
-	var allTextLines = csv.split(/\r\n|\n/);
-        var lines = [];
-        // start bei i=1, die header sind fest
-        for (var i=1; i<allTextLines.length; i++) {
-            var data = allTextLines[i].split(';');
-            if(data.length < 2){
-            	console.warn("Ignoring empty line in input file.");
-            	continue;
-            }
-                var tarr = [];
-                for (var j=0; j<data.length; j++) {
-                    tarr.push(data[j]);
-                }
-                lines.push(tarr);
-        }
-		return lines;
-}
+  function readCSV(reader) {
+    var csv = reader.result;
+    var allTextLines = csv.split(/\r\n|\n/);
+    var lines = [];
+    // start bei i=1, die header sind fest
+    for (var i = 1; i < allTextLines.length; i++) {
+      var data = allTextLines[i].split(';');
+      if (data.length < 2) {
+        console.warn("Ignoring empty line in input file.");
+        continue;
+      }
+      var tarr = [];
+      for (var j = 0; j < data.length; j++) {
+        tarr.push(data[j]);
+      }
+      lines.push(tarr);
+    }
+    return lines;
+  }
 
-function download(filename, text) {
-  var element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-  element.setAttribute('download', filename);
-  element.style.display = 'none';
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
-}
+  function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }
 </script>
