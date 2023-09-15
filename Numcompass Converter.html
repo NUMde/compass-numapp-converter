@@ -17,7 +17,7 @@
       </ul>
     </nav>
 
-    <article>
+    <article  id="main">
       <h1> compass-numapp-converter</h1>
       <p>Konvertiert Frageb&oumlgen im JSON Format in eine CSV Datei. Für jede Frage wird die Variable <i>definition</i>
         der Kopfzeile hinzugefügt. Für jeden Fragebogentyp wird eine eigene Datei erzeugt.</p>
@@ -92,6 +92,11 @@
       width: 100%;
       height: auto;
     }
+  }
+
+  .downloadLink {
+    display: block;
+    margin: 5px
   }
 </style>
 
@@ -243,9 +248,8 @@
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', filename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    element.classList += "downloadLink";
+    element.text = filename + " herunterladen";
+    document.getElementById('main').appendChild(element);
   }
 </script>
